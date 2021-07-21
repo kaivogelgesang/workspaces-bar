@@ -11,11 +11,11 @@ const { Clutter, Gio, GObject, Shell, St } = imports.gi;
 const Main = imports.ui.main;
 const PanelMenu = imports.ui.panelMenu;
 
-var WORKSPACES_SCHEMA = "org.gnome.desktop.wm.preferences";
-var WORKSPACES_KEY = "workspace-names";
+const WORKSPACES_SCHEMA = "org.gnome.desktop.wm.preferences";
+const WORKSPACES_KEY = "workspace-names";
 
 
-var WorkspacesBar = GObject.registerClass(
+const WorkspacesBar = GObject.registerClass(
     class WorkspacesBar extends PanelMenu.Button {
         _init() {
             super._init(0.0, 'Workspaces bar');
@@ -23,9 +23,6 @@ var WorkspacesBar = GObject.registerClass(
             // define gsettings schema for workspaces names, get workspaces names, signal for settings key changed
             this.workspaces_settings = new Gio.Settings({ schema: WORKSPACES_SCHEMA });
             this.workspaces_names_changed = this.workspaces_settings.connect(`changed::${WORKSPACES_KEY}`, this._update_workspaces_names.bind(this));
-
-            // hide Activities button
-            this._show_activities(false);
 
             // bar creation
             this.ws_bar = new St.BoxLayout({});
@@ -41,7 +38,6 @@ var WorkspacesBar = GObject.registerClass(
 
         // remove signals, restore Activities button, destroy workspaces bar
         _destroy() {
-            this._show_activities(true);
             if (this._ws_active_changed) {
                 global.workspace_manager.disconnect(this._ws_active_changed);
             }
@@ -59,18 +55,6 @@ var WorkspacesBar = GObject.registerClass(
             }
             this.ws_bar.destroy();
             super.destroy();
-        }
-
-        // hide Activities button
-        _show_activities(show) {
-            this.activities_button = Main.panel.statusArea['activities'];
-            if (this.activities_button) {
-                if (show && !Main.sessionMode.isLocked) {
-                    this.activities_button.container.show();
-                } else {
-                    this.activities_button.container.hide();
-                }
-            }
         }
 
         // update workspaces names
