@@ -74,28 +74,33 @@ const WorkspacesBar = GObject.registerClass(
 
             // display all current workspaces buttons
             for (let ws_index = 0; ws_index < this.ws_count; ++ws_index) {
+
+                let ws = global.workspace_manager.get_workspace_by_index(ws_index);
+
+                // only show non-empty workspaces
+                // or the currently active one
+                if (!(ws_index == this.active_ws_index || ws.n_windows > 1)) {
+                    continue;
+                }
+
                 this.ws_box = new St.Bin({ visible: true, reactive: true, can_focus: true, track_hover: true });
+                this.ws_box.style_class = 'workspace-box';
+
                 this.ws_box.label = new St.Label({ y_align: Clutter.ActorAlign.CENTER });
+
                 if (ws_index == this.active_ws_index) {
-                    if (global.workspace_manager.get_workspace_by_index(ws_index).n_windows > 0) {
-                        this.ws_box.label.style_class = 'desktop-label-nonempty-active';
-                    } else {
-                        this.ws_box.label.style_class = 'desktop-label-empty-active';
-                    }
-                } else {
-                    if (global.workspace_manager.get_workspace_by_index(ws_index).n_windows > 0) {
-                        this.ws_box.label.style_class = 'desktop-label-nonempty-inactive';
-                    } else {
-                        this.ws_box.label.style_class = 'desktop-label-empty-inactive';
-                    }
+                    this.ws_box.style_class += ' workspace-active';
                 }
+
                 if (this.workspaces_names[ws_index]) {
-                    this.ws_box.label.set_text("  " + this.workspaces_names[ws_index] + "  ");
+                    this.ws_box.label.set_text(this.workspaces_names[ws_index]);
                 } else {
-                    this.ws_box.label.set_text("  " + (ws_index + 1) + "  ");
+                    this.ws_box.label.set_text(`${ws_index + 1} (${ws.n_windows - 1} w)`);
                 }
+
                 this.ws_box.set_child(this.ws_box.label);
                 this.ws_box.connect('button-release-event', () => this._toggle_ws(ws_index));
+                this.ws_box.connect('touch-event', () => this._toggle_ws(ws_index));
                 this.ws_bar.add_actor(this.ws_box);
             }
         }
@@ -103,7 +108,7 @@ const WorkspacesBar = GObject.registerClass(
         // activate workspace or show overview
         _toggle_ws(ws_index) {
             if (global.workspace_manager.get_active_workspace_index() == ws_index) {
-                Main.overview.toggle();
+                // Main.overview.toggle();
             } else {
                 global.workspace_manager.get_workspace_by_index(ws_index).activate(global.get_current_time());
             }
@@ -116,7 +121,7 @@ class Extension {
 
     enable() {
         this.workspaces_bar = new WorkspacesBar();
-        Main.panel.addToStatusArea('workspaces-bar', this.workspaces_bar, 0, 'left');
+        Main.panel.addToStatusArea('workspaces-bar', this.workspaces_bar, 2, 'left');
     }
 
     disable() {
