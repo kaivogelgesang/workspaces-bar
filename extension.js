@@ -11,6 +11,9 @@ const { Clutter, Gio, GObject, Shell, St } = imports.gi;
 const Main = imports.ui.main;
 const PanelMenu = imports.ui.panelMenu;
 
+const PANEL_ICON_SIZE = imports.ui.panel.PANEL_ICON_SIZE;
+const APP_MENU_ICON_MARGIN = imports.ui.panel.APP_MENU_ICON_MARGIN;
+
 const WORKSPACES_SCHEMA = "org.gnome.desktop.wm.preferences";
 const WORKSPACES_KEY = "workspace-names";
 
@@ -68,6 +71,20 @@ const WorkspacesBar = GObject.registerClass(
             // destroy old workspaces bar buttons
             this.ws_bar.destroy_all_children();
 
+
+            // FIXME probably a bad idea
+            // but Gnome documentation is horrible
+            // so no idea if there is a better way
+            const AppSystem = Shell.AppSystem.get_default();
+
+            let app_map = new Map();  // window id -> app
+
+            AppSystem.get_running().forEach((app) => {
+                app.get_windows().forEach((window) => {
+                    app_map.set(window.get_id(), app);
+                })
+            });
+
             // get number of workspaces
             this.ws_count = global.workspace_manager.get_n_workspaces();
             this.active_ws_index = global.workspace_manager.get_active_workspace_index();
@@ -83,22 +100,38 @@ const WorkspacesBar = GObject.registerClass(
                     continue;
                 }
 
-                this.ws_box = new St.Bin({ visible: true, reactive: true, can_focus: true, track_hover: true });
+                this.ws_box = new St.BoxLayout({ visible: true, reactive: true, can_focus: true, track_hover: true });
                 this.ws_box.style_class = 'workspace-box';
-
-                this.ws_box.label = new St.Label({ y_align: Clutter.ActorAlign.CENTER });
 
                 if (ws_index == this.active_ws_index) {
                     this.ws_box.style_class += ' workspace-active';
                 }
 
-                if (this.workspaces_names[ws_index]) {
-                    this.ws_box.label.set_text(this.workspaces_names[ws_index]);
-                } else {
-                    this.ws_box.label.set_text(`${ws_index + 1} (${ws.n_windows - 1} w)`);
-                }
+                let s = new Set();
+                ws.list_windows().forEach((window) => {
+                    let app = app_map.get(window.get_id());
 
-                this.ws_box.set_child(this.ws_box.label);
+                    if (!app) return;
+
+                    s.add(app)
+                });
+
+                // let ws_apps = Array.from(s).join(" ");
+
+                this.ws_box.label = new St.Label({ y_align: Clutter.ActorAlign.CENTER });
+                this.ws_box.label.set_text(`${ws_index + 1}${s.size > 0 ? ": " : ""}`);
+                this.ws_box.add_child(this.ws_box.label);
+
+                s.forEach((app) => {
+                    let icon_box = new St.Bin({ y_align: Clutter.ActorAlign.CENTER });
+
+                    // see https://gitlab.gnome.org/GNOME/gnome-shell/-/blob/ca32abc15099507a5c6d2d6a808cb7ba5151fcd1/js/ui/panel.js#L255
+                    const icon = app.create_icon_texture(PANEL_ICON_SIZE - APP_MENU_ICON_MARGIN);
+                    icon_box.set_child(icon);
+                    
+                    this.ws_box.add_child(icon_box);
+                })
+
                 this.ws_box.connect('button-release-event', () => this._toggle_ws(ws_index));
                 this.ws_box.connect('touch-event', () => this._toggle_ws(ws_index));
                 this.ws_bar.add_actor(this.ws_box);
