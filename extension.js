@@ -88,6 +88,8 @@ const WorkspacesBar = GObject.registerClass(
             // get number of workspaces
             this.ws_count = global.workspace_manager.get_n_workspaces();
             this.active_ws_index = global.workspace_manager.get_active_workspace_index();
+            
+            let is_first_workspace = true;
 
             // display all current workspaces buttons
             for (let ws_index = 0; ws_index < this.ws_count; ++ws_index) {
@@ -103,6 +105,11 @@ const WorkspacesBar = GObject.registerClass(
                 this.ws_box = new St.BoxLayout({ visible: true, reactive: true, can_focus: true, track_hover: true });
                 this.ws_box.style_class = 'workspace-box';
 
+                if (is_first_workspace) {
+                    this.ws_box.style_class += ' workspace-first';
+                    is_first_workspace = false;
+                }
+
                 if (ws_index == this.active_ws_index) {
                     this.ws_box.style_class += ' workspace-active';
                 }
@@ -116,21 +123,26 @@ const WorkspacesBar = GObject.registerClass(
                     s.add(app)
                 });
 
-                // let ws_apps = Array.from(s).join(" ");
-
                 this.ws_box.label = new St.Label({ y_align: Clutter.ActorAlign.CENTER });
                 this.ws_box.label.set_text(`${ws_index + 1}${s.size > 0 ? ": " : ""}`);
                 this.ws_box.add_child(this.ws_box.label);
 
+                let multiple_boxes = false;
+
                 s.forEach((app) => {
                     let icon_box = new St.Bin({ y_align: Clutter.ActorAlign.CENTER });
+
+                    if (multiple_boxes) {
+                        icon_box.style_class = "workspace-icon-box-multiple";
+                    }
+                    multiple_boxes = true;
 
                     // see https://gitlab.gnome.org/GNOME/gnome-shell/-/blob/ca32abc15099507a5c6d2d6a808cb7ba5151fcd1/js/ui/panel.js#L255
                     const icon = app.create_icon_texture(PANEL_ICON_SIZE - APP_MENU_ICON_MARGIN);
                     icon_box.set_child(icon);
                     
                     this.ws_box.add_child(icon_box);
-                })
+                });
 
                 this.ws_box.connect('button-release-event', () => this._toggle_ws(ws_index));
                 this.ws_box.connect('touch-event', () => this._toggle_ws(ws_index));
