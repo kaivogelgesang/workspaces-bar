@@ -15,6 +15,10 @@
   color: #FBB86C;
 }
 
-.workspace-icon-box-multiple {
+.workspace-icon {
+  -st-icon-style: symbolic;
+}
+
+.workspace-icon-multiple {
   margin-left: 0.3em;
 }
