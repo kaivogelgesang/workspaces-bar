@@ -86,34 +86,34 @@ const WorkspacesBar = GObject.registerClass(
             });
 
             // get number of workspaces
-            this.ws_count = global.workspace_manager.get_n_workspaces();
-            this.active_ws_index = global.workspace_manager.get_active_workspace_index();
+            const ws_count = global.workspace_manager.get_n_workspaces();
+            const active_ws_index = global.workspace_manager.get_active_workspace_index();
             
             let is_first_workspace = true;
 
             // display all current workspaces buttons
-            for (let ws_index = 0; ws_index < this.ws_count; ++ws_index) {
+            for (let ws_index = 0; ws_index < ws_count; ++ws_index) {
 
                 let ws = global.workspace_manager.get_workspace_by_index(ws_index);
 
                 // only show non-empty workspaces
                 // or the currently active one
-                if (!(ws_index == this.active_ws_index || ws.n_windows > 1)) {
+                if (!(ws_index == active_ws_index || ws.n_windows > 1)) {
                     continue;
                 }
 
-                this.ws_box = new St.BoxLayout({ visible: true, reactive: true, can_focus: true, track_hover: true });
-                this.ws_bar.add_actor(this.ws_box);
+                let ws_box = new St.BoxLayout({ visible: true, reactive: true, can_focus: true, track_hover: true });
+                this.ws_bar.add_actor(ws_box);
 
-                this.ws_box.style_class = 'workspace-box';
+                ws_box.style_class = 'workspace-box';
 
                 if (is_first_workspace) {
-                    this.ws_box.style_class += ' workspace-first';
+                    ws_box.style_class += ' workspace-first';
                     is_first_workspace = false;
                 }
 
-                if (ws_index == this.active_ws_index) {
-                    this.ws_box.style_class += ' workspace-active';
+                if (ws_index == active_ws_index) {
+                    ws_box.style_class += ' workspace-active';
                 }
 
                 let s = new Set();
@@ -125,15 +125,15 @@ const WorkspacesBar = GObject.registerClass(
                     s.add(app)
                 });
 
-                this.ws_box.label = new St.Label({ y_align: Clutter.ActorAlign.CENTER });
-                this.ws_box.label.set_text(`${ws_index + 1}${s.size > 0 ? ": " : ""}`);
-                this.ws_box.add_child(this.ws_box.label);
+                let label = new St.Label({ y_align: Clutter.ActorAlign.CENTER });
+                label.set_text(`${ws_index + 1}${s.size > 0 ? ": " : ""}`);
+                ws_box.add_child(label);
 
                 let multiple_icons = false;
 
                 s.forEach((app) => {
                     let icon_box = new St.Bin({ y_align: Clutter.ActorAlign.CENTER, style_class: "workspace-icon" });
-                    this.ws_box.add_child(icon_box);
+                    ws_box.add_child(icon_box);
 
                     // let theme_node = icon_box.get_theme_node();
                     // log(`theme_node icon style: ${theme_node.get_icon_style()} (${St.IconStyle.SYMBOLIC}?)`);
@@ -148,8 +148,8 @@ const WorkspacesBar = GObject.registerClass(
                     icon_box.set_child(icon);
                 });
 
-                this.ws_box.connect('button-release-event', () => this._toggle_ws(ws_index));
-                this.ws_box.connect('touch-event', () => this._toggle_ws(ws_index));
+                ws_box.connect('button-release-event', () => this._toggle_ws(ws_index));
+                ws_box.connect('touch-event', () => this._toggle_ws(ws_index));
             }
         }
 
