@@ -88,7 +88,7 @@ const WorkspacesBar = GObject.registerClass(
             // get number of workspaces
             const ws_count = global.workspace_manager.get_n_workspaces();
             const active_ws_index = global.workspace_manager.get_active_workspace_index();
-            
+
             let is_first_workspace = true;
 
             // display all current workspaces buttons
@@ -98,7 +98,7 @@ const WorkspacesBar = GObject.registerClass(
 
                 // only show non-empty workspaces
                 // or the currently active one
-                if (!(ws_index == active_ws_index || ws.n_windows > 1)) {
+                if (ws_index != active_ws_index && ws.list_windows().filter((w) => !w.on_all_workspaces).length == 0) {
                     continue;
                 }
 
